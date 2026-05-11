@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beslenme Takibi</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0f14;--surface:#17171f;--card:#1e1e28;--border:#2a2a38;
+  --accent:#7c6cf5;--accent3:#f7b731;--danger:#ff6b6b;--success:#51cf66;
+  --text:#f0f0f5;--muted:#7f7f9a;--dim:#3a3a4e;
+  --r:14px;--font:'DM Sans',sans-serif;--head:'Syne',sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;font-size:15px}
+h1,h2,h3{font-family:var(--head)}
+#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.lcard{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:40px 36px;max-width:400px;width:100%;text-align:center}
+.llogo{font-family:var(--head);font-size:34px;font-weight:800;margin-bottom:6px}.llogo span{color:var(--accent)}
+.lsub{font-size:14px;color:var(--muted);margin-bottom:28px;line-height:1.6}
+.llabel{font-size:11px;color:var(--muted);text-align:left;display:block;margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase}
+.linput{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 16px;color:var(--text);font-family:var(--font);font-size:15px;outline:none;margin-bottom:12px;transition:border .2s}
+.linput:focus{border-color:var(--accent)}
+.lbtn{width:100%;padding:13px;border-radius:10px;border:none;cursor:pointer;font-family:var(--head);font-size:15px;font-weight:700;background:var(--accent);color:#fff;transition:all .2s;margin-top:4px}
+.lbtn:hover{filter:brightness(1.15)}.lbtn:disabled{opacity:.5;cursor:not-allowed}
+.lerr{font-size:13px;color:var(--danger);margin-top:10px;min-height:18px}
+.lnote{font-size:12px;color:var(--muted);margin-top:16px;line-height:1.6;background:var(--bg);border-radius:8px;padding:12px}
+#app{display:none}
+nav{display:flex;align-items:center;gap:8px;padding:12px 20px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;flex-wrap:wrap}
+.logo{font-family:var(--head);font-size:18px;font-weight:800}.logo span{color:var(--accent)}
+.nav-tabs{display:flex;gap:3px;background:var(--bg);border-radius:10px;padding:3px;flex:1;justify-content:center}
+.nav-tab{padding:7px 14px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:500;color:var(--muted);transition:all .2s;border:none;background:none;font-family:var(--font)}
+.nav-tab.active{background:var(--accent);color:#fff}
+.user-chip{background:var(--dim);border-radius:7px;padding:5px 10px;font-size:12px;color:var(--muted);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sync-indicator{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--success);flex-shrink:0}
+.sync-dot.syncing{background:var(--accent3);animation:pulse .8s infinite}
+.sync-dot.error{background:var(--danger)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.logout-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:5px 8px;border-radius:6px;transition:color .2s}
+.logout-btn:hover{color:var(--danger)}
+main{max-width:960px;margin:0 auto;padding:22px 18px}
+.section{display:none}.section.active{display:block}
+.daily-header{display:flex;align-items:center;gap:10px;margin-bottom:22px}
+.day-nav{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 14px;cursor:pointer;color:var(--text);font-size:13px;transition:all .2s}
+.day-nav:hover{background:var(--dim)}
+.day-title{font-family:var(--head);font-size:18px;font-weight:700;flex:1;text-align:center;line-height:1.3}
+.add-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:20px}
+.add-card h3{font-size:14px;font-weight:600;margin-bottom:14px;color:var(--muted)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.form-row.full{grid-template-columns:1fr}
+.flabel{font-size:11px;color:var(--muted);display:block;margin-bottom:5px;letter-spacing:.4px;text-transform:uppercase}
+input,select,textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;transition:border .2s}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+textarea{resize:vertical;min-height:65px}
+select option{background:var(--surface)}
+.btn{padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-family:var(--font);font-size:14px;font-weight:500;transition:all .2s;display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{filter:brightness(1.15)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.meal-section{margin-bottom:18px}
+.meal-label{font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+.meal-items{display:flex;flex-direction:column;gap:7px}
+.meal-item{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:13px 15px;display:flex;align-items:flex-start;gap:11px;position:relative;overflow:hidden}
+.meal-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--sc,var(--dim))}
+.score-badge{min-width:34px;height:34px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0}
+.meal-info{flex:1;min-width:0}
+.meal-name{font-weight:500;font-size:14px}
+.meal-meta{font-size:12px;color:var(--muted);margin-top:1px}
+.meal-ai{font-size:12px;color:var(--muted);background:var(--bg);border-radius:6px;padding:6px 10px;margin-top:6px;line-height:1.5}
+.del-btn{background:none;border:none;color:var(--muted);cursor:pointer;padding:4px 7px;border-radius:6px;font-size:13px;transition:all .2s;flex-shrink:0}
+.del-btn:hover{color:var(--danger);background:rgba(255,107,107,.1)}
+.ring-wrap{display:flex;flex-direction:column;align-items:center;margin-bottom:20px}
+.ring{position:relative;width:150px;height:150px}
+.ring svg{transform:rotate(-90deg)}
+.ring-num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring-big{font-family:var(--head);font-size:40px;font-weight:800}
+.ring-sub{font-size:11px;color:var(--muted)}
+.ring-grade{font-family:var(--head);font-size:15px;font-weight:700;margin-top:10px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:20px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center}
+.stat-v{font-family:var(--head);font-size:26px;font-weight:700}
+.stat-l{font-size:11px;color:var(--muted);margin-top:3px}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:18px}
+.chart-card h3{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:14px;letter-spacing:.8px;text-transform:uppercase}
+.chart-wrap{position:relative;height:190px}
+.period-score{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:22px;text-align:center;margin-bottom:18px}
+.period-bar{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;align-items:center}
+.period-select{flex:1;min-width:180px}
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:18px}
+.week-cell{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 4px;text-align:center;cursor:pointer;transition:all .2s}
+.week-cell:hover{border-color:var(--accent)}.week-cell.today{border-color:var(--accent);background:rgba(124,108,245,.1)}
+.wday{font-size:10px;color:var(--muted);text-transform:uppercase}
+.wnum{font-family:var(--head);font-size:17px;font-weight:700;margin:3px 0}
+.wscore{font-size:11px;font-weight:600}
+.month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:18px}
+.month-cell{aspect-ratio:1;background:var(--card);border:1px solid var(--border);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .2s}
+.month-cell:hover{border-color:var(--accent)}.month-cell.today{border-color:var(--accent);background:rgba(124,108,245,.15)}
+.month-cell.other{opacity:.3}
+.mnum{font-size:12px;font-weight:600}.mdot{width:5px;height:5px;border-radius:50%;margin-top:2px}
+.mday-lbl{text-align:center;font-size:10px;color:var(--muted);font-weight:600;padding:3px 0}
+.leaderboard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:18px}
+.lb-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.lb-head h3{font-size:14px;font-weight:600}
+.lb-row{display:flex;align-items:center;gap:12px;padding:11px 18px;border-bottom:1px solid var(--dim);transition:background .2s}
+.lb-row:last-child{border-bottom:none}.lb-row:hover{background:var(--dim)}
+.lb-rank{font-family:var(--head);font-size:20px;font-weight:800;min-width:32px;color:var(--muted)}
+.lb-rank.gold{color:var(--accent3)}.lb-rank.silver{color:#aaa}.lb-rank.bronze{color:#cd7f32}
+.lb-info{flex:1}.lb-name{font-weight:500;font-size:13px}.lb-days{font-size:11px;color:var(--muted)}
+.lb-bar{height:3px;background:var(--dim);border-radius:2px;margin-top:5px;overflow:hidden}
+.lb-fill{height:100%;border-radius:2px;transition:width .8s ease}
+.lb-score{font-family:var(--head);font-size:19px;font-weight:700}
+.empty{text-align:center;padding:42px 20px;color:var(--muted)}
+.empty i{font-size:36px;margin-bottom:10px;opacity:.35;display:block}
+.empty p{font-size:13px;line-height:1.7}
+.loading-overlay{position:fixed;inset:0;background:rgba(15,15,20,.85);display:flex;align-items:center;justify-content:center;z-index:999;flex-direction:column;gap:12px}
+.spinner{width:36px;height:36px;border:3px solid var(--dim);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-txt{font-size:14px;color:var(--muted)}
+.dot-bounce{display:inline-flex;gap:4px;align-items:center}
+.dot-bounce span{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:bounce .9s infinite}
+.dot-bounce span:nth-child(2){animation-delay:.15s}.dot-bounce span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-5px)}}
+.toast{position:fixed;bottom:22px;right:22px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px 16px;font-size:13px;z-index:9999;transform:translateY(80px);opacity:0;transition:all .3s;max-width:280px}
+.toast.show{transform:translateY(0);opacity:1}.toast.ok{border-color:var(--success);color:var(--success)}.toast.err{border-color:var(--danger);color:var(--danger)}
+@media(max-width:600px){.form-row{grid-template-columns:1fr}.week-cell{padding:7px 2px}.wday{font-size:9px}.wnum{font-size:14px}.nav-tab{padding:6px 10px;font-size:11px}main{padding:14px 11px}.day-title{font-size:15px}}
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="lcard">
+    <div class="llogo">Beslen<span>me</span></div>
+    <div class="lsub">Tüm cihazlardan erişilebilen<br>kişisel beslenme takip uygulaması</div>
+    <label class="llabel">Kullanıcı Adı</label>
+    <input class="linput" id="loginUser" type="text" placeholder="örn: ahmet" autocomplete="username" />
+    <label class="llabel">Şifre (en az 4 karakter)</label>
+    <input class="linput" id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password" />
+    <button class="lbtn" id="loginBtn" onclick="doLogin()">Giriş Yap / Kayıt Ol</button>
+    <div class="lerr" id="loginErr"></div>
+    <div class="lnote"><i class="fa fa-info-circle" style="color:var(--accent);margin-right:5px"></i>İlk girişte hesabın otomatik oluşturulur. Aynı kullanıcı adı + şifre ile her cihazdan girebilirsin.</div>
+  </div>
+</div>
+
+<div id="app">
+  <nav>
+    <div class="logo">Beslen<span>me</span></div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="switchSection('daily',this)"><i class="fa fa-utensils"></i> Günlük</button>
+      <button class="nav-tab" onclick="switchSection('weekly',this)"><i class="fa fa-calendar-week"></i> Haftalık</button>
+      <button class="nav-tab" onclick="switchSection('monthly',this)"><i class="fa fa-calendar"></i> Aylık</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <div class="user-chip" id="userChip"></div>
+      <div class="sync-indicator"><div class="sync-dot" id="syncDot"></div><span id="syncTxt">Hazır</span></div>
+      <button class="logout-btn" onclick="doLogout()" title="Çıkış"><i class="fa fa-sign-out-alt"></i></button>
+    </div>
+  </nav>
+  <main>
+    <div class="section active" id="sec-daily">
+      <div class="daily-header">
+        <button class="day-nav" onclick="changeDay(-1)">← Önceki</button>
+        <div class="day-title" id="dayTitle"></div>
+        <button class="day-nav" id="nextDayBtn" onclick="changeDay(1)">Sonraki →</button>
+      </div>
+      <div class="add-card">
+        <h3><i class="fa fa-plus-circle" style="color:var(--accent);margin-right:6px"></i>Öğün Ekle</h3>
+        <div class="form-row">
+          <div><label class="flabel">Öğün</label>
+            <select id="mealType">
+              <option value="Sabah Kahvaltısı">☀️ Sabah Kahvaltısı</option>
+              <option value="Ara Öğün">🍎 Ara Öğün</option>
+              <option value="Öğle Yemeği">🕛 Öğle Yemeği</option>
+              <option value="İkindi Arası">🌤️ İkindi Arası</option>
+              <option value="Akşam Yemeği">🌙 Akşam Yemeği</option>
+              <option value="Gece Atıştırması">🌜 Gece Atıştırması</option>
+            </select>
+          </div>
+          <div><label class="flabel">Yemek Adı</label>
+            <input type="text" id="foodName" placeholder="Mercimek çorbası, elma…" />
+          </div>
+        </div>
+        <div class="form-row full">
+          <label class="flabel">Detay (isteğe bağlı)</label>
+          <textarea id="foodDetail" placeholder="1 kase, zeytinyağlı, yanında ekmek…"></textarea>
+        </div>
+        <button class="btn btn-primary" id="addBtn" onclick="addMeal()">
+          <i class="fa fa-sparkles"></i> Ekle &amp; AI Analizi Yap
+        </button>
+      </div>
+      <div id="mealsList"></div>
+      <div id="dailyScoreWrap" style="display:none">
+        <div class="chart-card"><h3>Günün Sağlıklılık Skoru</h3><div id="dailyScoreInner"></div></div>
+      </div>
+    </div>
+
+    <div class="section" id="sec-weekly">
+      <div class="period-bar">
+        <select class="period-select" id="weekSelect" onchange="renderWeekly()"></select>
+        <div class="sync-indicator"><div class="sync-dot" id="wSyncDot"></div><span id="wSyncTxt"></span></div>
+      </div>
+      <div class="week-grid" id="weekGrid"></div>
+      <div class="stats-grid" id="weekStats"></div>
+      <div class="chart-card"><h3>Günlük Skor Trendi</h3><div class="chart-wrap"><canvas id="weekChart" role="img" aria-label="Haftalık skor grafiği"></canvas></div></div>
+      <div class="period-score" id="weekScoreSection"></div>
+      <div id="weekLb"></div>
+    </div>
+
+    <div class="section" id="sec-monthly">
+      <div class="period-bar">
+        <select class="period-select" id="monthSelect" onchange="renderMonthly()"></select>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:5px" id="monthDayLabels"></div>
+      <div class="month-grid" id="monthGrid"></div>
+      <div class="stats-grid" id="monthStats"></div>
+      <div class="chart-card"><h3>Aylık Skor Trendi</h3><div class="chart-wrap"><canvas id="monthChart" role="img" aria-label="Aylık skor grafiği"></canvas></div></div>
+      <div class="period-score" id="monthScoreSection"></div>
+      <div id="monthLb"></div>
+    </div>
+  </main>
+</div>
+
+<div class="loading-overlay" id="loadingOverlay" style="display:none">
+  <div class="spinner"></div><div class="loading-txt" id="loadingTxt">Yükleniyor…</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const SB_URL='https://xjooxwtwdinlsignlrjc.supabase.co';
+const SB_KEY='sb_publishable_sMpdbQ4sYrS3iGPqAa_GkA_ULq2OiCT';
+
+let currentUser=null,currentDay=todayStr(),localCache={},weekChart=null,monthChart=null;
+
+function todayStr(){return new Date().toISOString().slice(0,10);}
+function scoreColor(s){
+  if(s>=80)return{fg:'#51cf66',bg:'rgba(81,207,102,.18)'};
+  if(s>=60)return{fg:'#4ecdc4',bg:'rgba(78,205,196,.18)'};
+  if(s>=40)return{fg:'#f7b731',bg:'rgba(247,183,49,.18)'};
+  return{fg:'#ff6b6b',bg:'rgba(255,107,107,.18)'};
+}
+function scoreGrade(s){return s>=80?'A':s>=60?'B':s>=40?'C':'D';}
+function gradeLabel(g){return{A:'Harika',B:'İyi',C:'Orta',D:'Gelişmeli'}[g]||'?';}
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function showToast(msg,type='ok'){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type+' show';setTimeout(()=>t.classList.remove('show'),3000);}
+function showLoading(txt='Yükleniyor…'){document.getElementById('loadingTxt').textContent=txt;document.getElementById('loadingOverlay').style.display='flex';}
+function hideLoading(){document.getElementById('loadingOverlay').style.display='none';}
+function setSyncStatus(state,txt){
+  ['syncDot','wSyncDot'].forEach(id=>{const el=document.getElementById(id);if(el)el.className='sync-dot'+(state==='syncing'?' syncing':state==='error'?' error':'');});
+  ['syncTxt','wSyncTxt'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=txt||'';});
+}
+function formatDateTR(str){
+  const [y,m,d]=str.split('-');
+  const months=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  const days=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+  const dt=new Date(y,m-1,d);
+  return days[dt.getDay()]+', '+d+' '+months[+m-1]+' '+y;
+}
+function formatShort(str){const[y,m,d]=str.split('-');return d+' '+['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'][+m-1];}
+
+async function sbFetch(path,opts={}){
+  const res=await fetch(SB_URL+path,{
+    ...opts,
+    headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':opts.prefer||'',...(opts.headers||{})}
+  });
+  if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.message||res.statusText);}
+  const txt=await res.text();return txt?JSON.parse(txt):null;
+}
+
+function hashPass(p){let h=0;for(const c of p)h=(h<<5)-h+c.charCodeAt(0)|0;return Math.abs(h).toString(36);}
+
+async function doLogin(){
+  const user=document.getElementById('loginUser').value.trim().toLowerCase();
+  const pass=document.getElementById('loginPass').value;
+  const err=document.getElementById('loginErr');
+  err.textContent='';
+  if(!user||user.length<2){err.textContent='Kullanıcı adı en az 2 karakter olmalı.';return;}
+  if(!pass||pass.length<4){err.textContent='Şifre en az 4 karakter olmalı.';return;}
+  const btn=document.getElementById('loginBtn');
+  btn.disabled=true;btn.textContent='Bağlanıyor…';
+  try{
+    let rows=null;
+    try{rows=await sbFetch(`/rest/v1/users?username=eq.${encodeURIComponent(user)}&select=username,pass_hash`);}catch(e){}
+    if(rows&&rows.length>0){
+      if(rows[0].pass_hash!==hashPass(pass)){err.textContent='Şifre yanlış!';btn.disabled=false;btn.textContent='Giriş Yap / Kayıt Ol';return;}
+    } else {
+      try{await sbFetch(`/rest/v1/users`,{method:'POST',prefer:'return=minimal',body:JSON.stringify({username:user,pass_hash:hashPass(pass)})});}catch(e){}
+    }
+    currentUser=user;
+    localStorage.setItem('bs_user',user);
+    localStorage.setItem('bs_hash',hashPass(pass));
+    await startApp();
+  }catch(e){
+    currentUser=user;
+    localStorage.setItem('bs_user',user);
+    localStorage.setItem('bs_hash',hashPass(pass));
+    await startApp();
+  }
+}
+
+async function startApp(){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('userChip').textContent=currentUser;
+  showLoading('Veriler yükleniyor…');
+  await loadAllMeals();
+  hideLoading();
+  renderDaily();
+}
+
+function doLogout(){
+  currentUser=null;localCache={};
+  localStorage.removeItem('bs_user');localStorage.removeItem('bs_hash');
+  document.getElementById('app').style.display='none';
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('loginUser').value='';
+  document.getElementById('loginPass').value='';
+}
+
+async function loadAllMeals(){
+  try{
+    setSyncStatus('syncing','Senkronize ediliyor…');
+    const rows=await sbFetch(`/rest/v1/meals?user_id=eq.${encodeURIComponent(currentUser)}&order=day.asc,created_at.asc&select=*`);
+    localCache={};
+    (rows||[]).forEach(r=>{
+      if(!localCache[r.day])localCache[r.day]=[];
+      localCache[r.day].push({id:r.id,type:r.meal_type,name:r.food_name,detail:r.food_detail||'',score:r.score||50,aiNote:r.ai_note||'',time:r.meal_time||''});
+    });
+    setSyncStatus('ok','Senkronize');
+  }catch(e){setSyncStatus('error','Bağlantı hatası');showToast('Veriler yüklenemedi: '+e.message,'err');}
+}
+
+async function saveMealToSB(meal,day){
+  setSyncStatus('syncing','Kaydediliyor…');
+  try{
+    await sbFetch(`/rest/v1/meals`,{method:'POST',prefer:'return=minimal',body:JSON.stringify({id:meal.id,user_id:currentUser,day,meal_type:meal.type,food_name:meal.name,food_detail:meal.detail||null,score:meal.score,ai_note:meal.aiNote||null,meal_time:meal.time||null})});
+    setSyncStatus('ok','Kaydedildi');
+  }catch(e){setSyncStatus('error','Kayıt hatası');showToast('Kayıt hatası: '+e.message,'err');}
+}
+
+async function deleteMealFromSB(id){
+  setSyncStatus('syncing','Siliniyor…');
+  try{await sbFetch(`/rest/v1/meals?id=eq.${encodeURIComponent(id)}`,{method:'DELETE'});setSyncStatus('ok','Silindi');}
+  catch(e){setSyncStatus('error','Silme hatası');}
+}
+
+function getDayScore(day){const meals=localCache[day]||[];if(!meals.length)return null;return Math.round(meals.reduce((a,m)=>a+(m.score||0),0)/meals.length);}
+
+function renderRing(score,grade,col,sub){
+  const r=58,cx=75,cy=75,circ=2*Math.PI*r,offset=circ-(score/100)*circ;
+  return `<div class="ring-wrap"><div class="ring"><svg width="150" height="150" viewBox="0 0 150 150"><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--dim)" stroke-width="10"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${col.fg}" stroke-width="10" stroke-dasharray="${circ.toFixed(2)}" stroke-dashoffset="${offset.toFixed(2)}" stroke-linecap="round"/></svg><div class="ring-num"><span class="ring-big" style="color:${col.fg}">${score}</span><span class="ring-sub">${sub}</span></div></div><div class="ring-grade" style="color:${col.fg}">${grade} – ${gradeLabel(grade)}</div></div>`;
+}
+
+function renderDaily(){
+  const today=todayStr();
+  document.getElementById('dayTitle').textContent=currentDay===today?'Bugün – '+formatDateTR(currentDay):formatDateTR(currentDay);
+  document.getElementById('nextDayBtn').style.cssText=currentDay===today?'opacity:.3;pointer-events:none':'';
+  const meals=localCache[currentDay]||[];
+  const container=document.getElementById('mealsList');
+  if(!meals.length){
+    container.innerHTML=`<div class="empty"><i class="fa fa-bowl-food"></i><p>Bu güne ait kayıt yok.<br>Yukarıdaki formu kullanarak öğün ekle.</p></div>`;
+    document.getElementById('dailyScoreWrap').style.display='none';return;
+  }
+  const types=['Sabah Kahvaltısı','Ara Öğün','Öğle Yemeği','İkindi Arası','Akşam Yemeği','Gece Atıştırması'];
+  let html='';
+  types.forEach(t=>{
+    const items=meals.filter(m=>m.type===t);if(!items.length)return;
+    html+=`<div class="meal-section"><div class="meal-label">${t}</div><div class="meal-items">`;
+    items.forEach(item=>{
+      const col=scoreColor(item.score);
+      html+=`<div class="meal-item" style="--sc:${col.fg}"><div class="score-badge" style="background:${col.bg};color:${col.fg}">${item.score}</div><div class="meal-info"><div class="meal-name">${escHtml(item.name)}</div>${item.detail?`<div class="meal-meta">${escHtml(item.detail)}</div>`:''} ${item.aiNote?`<div class="meal-ai"><i class="fa fa-robot" style="color:var(--accent);margin-right:4px"></i>${escHtml(item.aiNote)}</div>`:''}</div><button class="del-btn" onclick="deleteMeal('${item.id}')"><i class="fa fa-trash"></i></button></div>`;
+    });
+    html+='</div></div>';
+  });
+  container.innerHTML=html;
+  const avg=getDayScore(currentDay);const g=scoreGrade(avg);const col=scoreColor(avg);
+  document.getElementById('dailyScoreWrap').style.display='block';
+  document.getElementById('dailyScoreInner').innerHTML=renderRing(avg,g,col,meals.length+' öğün');
+}
+
+function changeDay(d){const dt=new Date(currentDay);dt.setDate(dt.getDate()+d);if(dt>new Date())return;currentDay=dt.toISOString().slice(0,10);renderDaily();}
+
+async function deleteMeal(id){
+  Object.keys(localCache).forEach(day=>{localCache[day]=localCache[day].filter(m=>m.id!==id);if(!localCache[day].length)delete localCache[day];});
+  renderDaily();await deleteMealFromSB(id);showToast('Öğün silindi');
+}
+
+async function addMeal(){
+  const name=document.getElementById('foodName').value.trim();
+  if(!name){showToast('Yemek adı boş olamaz!','err');return;}
+  const type=document.getElementById('mealType').value;
+  const detail=document.getElementById('foodDetail').value.trim();
+  const btn=document.getElementById('addBtn');
+  btn.disabled=true;btn.innerHTML='<div class="dot-bounce"><span></span><span></span><span></span></div> AI Analiz Ediyor…';
+  let score=50,aiNote='';
+  try{
+    const prompt=`Sen bir beslenme uzmanısın. Aşağıdaki öğünü değerlendir. SADECE JSON döndür, başka hiçbir şey yazma.\n\nÖğün: ${type}\nYemek: ${name}\n${detail?'Detay: '+detail:''}\n\nJSON: {"score":<0-100 tam sayı>,"note":"<Türkçe 1-2 cümle kısa yorum>"}`;
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,messages:[{role:'user',content:prompt}]})});
+    const d=await resp.json();
+    const txt=d.content?.map(c=>c.text||'').join('').trim();
+    const json=JSON.parse(txt.replace(/```json|```/g,'').trim());
+    score=Math.min(100,Math.max(0,Math.round(json.score)));aiNote=json.note||'';
+  }catch(e){aiNote='AI analizi yapılamadı, varsayılan puan atandı.';}
+  const meal={id:Date.now().toString()+Math.random().toString(36).slice(2),type,name,detail,score,aiNote,time:new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})};
+  if(!localCache[currentDay])localCache[currentDay]=[];
+  localCache[currentDay].push(meal);
+  document.getElementById('foodName').value='';document.getElementById('foodDetail').value='';
+  btn.disabled=false;btn.innerHTML='<i class="fa fa-sparkles"></i> Ekle &amp; AI Analizi Yap';
+  renderDaily();await saveMealToSB(meal,currentDay);showToast('✓ "'+name+'" eklendi – Skor: '+score);
+}
+
+function getWeekStart(d){const dt=new Date(d),day=dt.getDay(),diff=day===0?-6:1-day;dt.setDate(dt.getDate()+diff);return dt.toISOString().slice(0,10);}
+
+function populateWeekSelect(){
+  const sel=document.getElementById('weekSelect');const prev=sel.value;const today=todayStr();
+  const weeks=new Set([getWeekStart(today)]);
+  Object.keys(localCache).forEach(d=>weeks.add(getWeekStart(d)));
+  for(let i=1;i<=12;i++){const dt=new Date(today);dt.setDate(dt.getDate()-i*7);weeks.add(getWeekStart(dt.toISOString().slice(0,10)));}
+  const arr=[...weeks].sort().reverse();
+  sel.innerHTML=arr.map(w=>{const end=new Date(w);end.setDate(end.getDate()+6);return`<option value="${w}"${w===prev?' selected':''}>${formatShort(w)} – ${formatShort(end.toISOString().slice(0,10))}</option>`;}).join('');
+}
+
+function renderWeekly(){
+  populateWeekSelect();
+  const ws=document.getElementById('weekSelect').value||getWeekStart(todayStr());
+  const today=todayStr();const days=[],dn=['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
+  for(let i=0;i<7;i++){const dt=new Date(ws);dt.setDate(dt.getDate()+i);days.push(dt.toISOString().slice(0,10));}
+  let wg='';const weekScores=[];
+  days.forEach((d,i)=>{
+    const sc=getDayScore(d);if(sc!=null)weekScores.push(sc);
+    const col=sc!=null?scoreColor(sc).fg:'var(--dim)';
+    wg+=`<div class="week-cell ${d===today?'today':''}" onclick="gotoDay('${d}')"><div class="wday">${dn[i]}</div><div class="wnum" style="color:${sc!=null?col:'var(--muted)'}">${d.slice(8)}</div><div class="wscore" style="color:${col}">${sc!=null?sc:'–'}</div></div>`;
+  });
+  document.getElementById('weekGrid').innerHTML=wg;
+  const avg=weekScores.length?Math.round(weekScores.reduce((a,b)=>a+b,0)/weekScores.length):0;const col=scoreColor(avg);
+  document.getElementById('weekStats').innerHTML=`<div class="stat"><div class="stat-v" style="color:${col.fg}">${avg}</div><div class="stat-l">Haftalık Ort.</div></div><div class="stat"><div class="stat-v" style="color:#51cf66">${weekScores.length?Math.max(...weekScores):0}</div><div class="stat-l">En İyi Gün</div></div><div class="stat"><div class="stat-v" style="color:#ff6b6b">${weekScores.length?Math.min(...weekScores):0}</div><div class="stat-l">En Zayıf Gün</div></div><div class="stat"><div class="stat-v" style="color:var(--accent3)">${weekScores.length}/7</div><div class="stat-l">Kayıt Günü</div></div>`;
+  if(weekChart){weekChart.destroy();weekChart=null;}
+  const ctx=document.getElementById('weekChart').getContext('2d');
+  weekChart=new Chart(ctx,{type:'bar',data:{labels:days.map((d,i)=>dn[i]+' '+d.slice(8)),datasets:[{label:'Skor',data:days.map(d=>getDayScore(d)),backgroundColor:days.map(d=>{const s=getDayScore(d);return s!=null?scoreColor(s).fg+'99':'rgba(58,58,78,.4)';}),borderColor:days.map(d=>{const s=getDayScore(d);return s!=null?scoreColor(s).fg:'#3a3a4e';}),borderWidth:1.5,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#7f7f9a',font:{size:11}}},y:{min:0,max:100,grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#7f7f9a',font:{size:11}}}}}});
+  const wss=document.getElementById('weekScoreSection');
+  if(weekScores.length){const g=scoreGrade(avg),c=scoreColor(avg);wss.innerHTML=`<div style="font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Haftalık Final Skoru</div>${renderRing(avg,g,c,weekScores.length+' gün kayıt')}<div style="margin-top:10px;font-size:13px;color:var(--muted)">Bu haftanın ortalama sağlıklı beslenme puanı</div>`;}
+  else wss.innerHTML=`<div class="empty"><i class="fa fa-chart-line"></i><p>Bu haftaya ait kayıt bulunamadı.</p></div>`;
+  renderLeaderboard('week',document.getElementById('weekLb'));
+}
+
+function gotoDay(d){currentDay=d;document.querySelectorAll('.nav-tab')[0].click();}
+
+function populateMonthSelect(){
+  const sel=document.getElementById('monthSelect');const prev=sel.value;const today=todayStr();
+  const months=new Set([today.slice(0,7)]);
+  Object.keys(localCache).forEach(d=>months.add(d.slice(0,7)));
+  for(let i=1;i<=14;i++){const dt=new Date(today);dt.setMonth(dt.getMonth()-i);months.add(dt.toISOString().slice(0,7));}
+  const arr=[...months].sort().reverse();
+  const tr=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  sel.innerHTML=arr.map(m=>{const[y,mo]=m.split('-');return`<option value="${m}"${m===prev?' selected':''}>${tr[+mo-1]} ${y}</option>`;}).join('');
+}
+
+function renderMonthly(){
+  populateMonthSelect();
+  const ym=document.getElementById('monthSelect').value||todayStr().slice(0,7);
+  const[y,mo]=ym.split('-').map(Number);const today=todayStr();
+  const dn=['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
+  document.getElementById('monthDayLabels').innerHTML=dn.map(d=>`<div class="mday-lbl">${d}</div>`).join('');
+  const firstDay=new Date(y,mo-1,1),lastDay=new Date(y,mo,0),startPad=(firstDay.getDay()+6)%7;
+  let mg='';
+  for(let i=0;i<startPad;i++){const dt=new Date(y,mo-1,-startPad+i+1);mg+=`<div class="month-cell other"><span class="mnum">${dt.getDate()}</span></div>`;}
+  const monthScores=[];
+  for(let d=1;d<=lastDay.getDate();d++){
+    const ds=`${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const sc=getDayScore(ds);if(sc!=null)monthScores.push(sc);
+    const isToday=ds===today;const col=sc!=null?scoreColor(sc).fg:'transparent';
+    mg+=`<div class="month-cell ${isToday?'today':''}" onclick="gotoDay('${ds}')" title="${sc!=null?sc:'Kayıt yok'}"><span class="mnum" style="color:${sc!=null?scoreColor(sc).fg:'var(--muted)'}">${d}</span><span class="mdot" style="background:${col}"></span></div>`;
+  }
+  const endPad=7-((startPad+lastDay.getDate())%7||7);
+  if(endPad<7)for(let i=1;i<=endPad;i++)mg+=`<div class="month-cell other"><span class="mnum">${i}</span></div>`;
+  document.getElementById('monthGrid').innerHTML=mg;
+  const avg=monthScores.length?Math.round(monthScores.reduce((a,b)=>a+b,0)/monthScores.length):0;const col=scoreColor(avg);
+  document.getElementById('monthStats').innerHTML=`<div class="stat"><div class="stat-v" style="color:${col.fg}">${avg}</div><div class="stat-l">Aylık Ort.</div></div><div class="stat"><div class="stat-v" style="color:#51cf66">${monthScores.length?Math.max(...monthScores):0}</div><div class="stat-l">En İyi Gün</div></div><div class="stat"><div class="stat-v" style="color:#ff6b6b">${monthScores.length?Math.min(...monthScores):0}</div><div class="stat-l">En Zayıf Gün</div></div><div class="stat"><div class="stat-v" style="color:var(--accent3)">${monthScores.length}/${lastDay.getDate()}</div><div class="stat-l">Kayıt Günü</div></div>`;
+  if(monthChart){monthChart.destroy();monthChart=null;}
+  const labels=[],data2=[];
+  for(let d=1;d<=lastDay.getDate();d++){const ds=`${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;labels.push(String(d));data2.push(getDayScore(ds));}
+  const ctx2=document.getElementById('monthChart').getContext('2d');
+  monthChart=new Chart(ctx2,{type:'line',data:{labels,datasets:[{label:'Skor',data:data2,borderColor:'#7c6cf5',backgroundColor:'rgba(124,108,245,.1)',tension:.4,fill:true,pointBackgroundColor:data2.map(s=>s!=null?scoreColor(s).fg:'transparent'),pointRadius:4,spanGaps:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#7f7f9a',font:{size:10},autoSkip:true,maxTicksLimit:15}},y:{min:0,max:100,grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#7f7f9a',font:{size:10}}}}}});
+  const mss=document.getElementById('monthScoreSection');
+  if(monthScores.length){const g=scoreGrade(avg),c=scoreColor(avg);mss.innerHTML=`<div style="font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Aylık Final Skoru</div>${renderRing(avg,g,c,monthScores.length+' gün kayıt')}<div style="margin-top:10px;font-size:13px;color:var(--muted)">Bu ayın ortalama sağlıklı beslenme puanı</div>`;}
+  else mss.innerHTML=`<div class="empty"><i class="fa fa-chart-line"></i><p>Bu aya ait kayıt bulunamadı.</p></div>`;
+  renderLeaderboard('month',document.getElementById('monthLb'));
+}
+
+function buildLeaderboardData(type){
+  const map={};
+  Object.entries(localCache).forEach(([day,meals])=>{
+    if(!meals.length)return;
+    const sc=Math.round(meals.reduce((a,m)=>a+(m.score||0),0)/meals.length);
+    const key=type==='week'?getWeekStart(day):day.slice(0,7);
+    if(!map[key])map[key]=[];map[key].push(sc);
+  });
+  return Object.entries(map).map(([k,arr])=>{
+    const avg=Math.round(arr.reduce((a,b)=>a+b,0)/arr.length);
+    let label='';
+    if(type==='week'){const end=new Date(k);end.setDate(end.getDate()+6);label=formatShort(k)+' – '+formatShort(end.toISOString().slice(0,10));}
+    else{const[y,mo]=k.split('-');label=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'][+mo-1]+' '+y;}
+    return{key,label,score:avg,days:arr.length};
+  }).sort((a,b)=>b.score-a.score);
+}
+
+function renderLeaderboard(type,container){
+  const lb=buildLeaderboardData(type);if(!lb.length){container.innerHTML='';return;}
+  const medals=['gold','silver','bronze'];
+  let html=`<div class="leaderboard"><div class="lb-head"><i class="fa fa-trophy" style="color:var(--accent3)"></i><h3>${type==='week'?'Haftalık':'Aylık'} Sıralama</h3></div>`;
+  lb.slice(0,10).forEach((r,i)=>{const col=scoreColor(r.score);html+=`<div class="lb-row"><div class="lb-rank ${medals[i]||''}">${i+1}</div><div class="lb-info"><div class="lb-name">${r.label}</div><div class="lb-days">${r.days} gün kayıt</div><div class="lb-bar"><div class="lb-fill" style="width:${r.score}%;background:${col.fg}"></div></div></div><div class="lb-score" style="color:${col.fg}">${r.score}</div></div>`;});
+  html+='</div>';container.innerHTML=html;
+}
+
+function switchSection(id,btn){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  if(btn)btn.classList.add('active');
+  if(id==='weekly')renderWeekly();
+  if(id==='monthly')renderMonthly();
+}
+
+(async()=>{
+  const savedUser=localStorage.getItem('bs_user');
+  const savedHash=localStorage.getItem('bs_hash');
+  if(savedUser&&savedHash){currentUser=savedUser;await startApp();}
+})();
+</script>
+</body>
+</html>
